@@ -52,13 +52,24 @@ bool init()
 
     // glfw window creation
     // --------------------
+    #ifdef __APPLE__
+    //Little hack to avoid black screen on Mac OS (Mojave) (Part 1/2)
+    window = glfwCreateWindow(SCR_WIDTH-1, SCR_HEIGHT, APP_TITLE, NULL, NULL);
+    #else
     window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, APP_TITLE, NULL, NULL);
+    #endif
+    
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+    #ifdef __APPLE__
+    //Little hack to avoid black screen on Mac OS (Mojave) (Part 2/2)
+    glfwPollEvents();
+    glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
+    #endif
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
@@ -159,7 +170,10 @@ void render()
 {
     while (!glfwWindowShouldClose(window))
     {
+        
         showFPS(window);
+
+        
         // input
         // -----
         processInput(window);
@@ -167,15 +181,17 @@ void render()
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        
         glClear(GL_COLOR_BUFFER_BIT);
+        
 
         // draw our first triangle
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        // glBindVertexArray(0); // no need to unbind it every time
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0); // no need to unbind it every time
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
