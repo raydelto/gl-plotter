@@ -25,6 +25,7 @@ const char *vertexShaderSource = "#version 330 core\n"
                                  "out vec3 vertexColor;\n"
                                  "void main()\n"
                                  "{\n"
+                                 "   gl_PointSize = 2.0f;\n"
                                  "   gl_Position = vec4(aPos, 1.0);\n"
                                  "   vertexColor = aColor;\n"
                                  "}\0";
@@ -35,6 +36,30 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "{\n"
                                    "   FragColor = vec4(vertexColor,1.0);\n"
                                    "}\n\0";
+
+
+float* generatePoints(int &size)
+{
+    float* points = new float[SCR_WIDTH * 6];
+    size = SCR_WIDTH * 6 * sizeof(float);
+    printf("origina size = %d\n", size);
+    float x = -1.0;
+    int pc;
+    for(int i = 0 ; i < SCR_WIDTH; i += 6)
+    {
+        // pc = (SCR_WIDTH * 100) /  i;
+        
+        points[i] = x;
+        points[i+1] = x*x;
+        points[i+2] = 0.0f;
+        points[i+3] = 1.0f;
+        points[i+4] = 0.0f;
+        points[i+5] = 0.0f;
+        x += 0.01;
+    }
+    
+    return points;
+}
 
 
 bool init()
@@ -139,19 +164,25 @@ bool init()
     
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-    float vertices[] = {
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, //right
-         0.0f,  0.5f, 0.0f,  0.0f, 1.0f, 0.0f, //Top
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f//left   
-    };
+    // float vertices[] = {
+    //      0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, //right
+    //      0.0f,  0.5f, 0.0f,  0.0f, 1.0f, 0.0f, //Top
+    //     -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f//left   
+    // };
 
+    
+
+    int size;
+    float *vertices = generatePoints(size);
+    std::cout << "size = " << size << std::endl;
+    
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
     //Triangle 1
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
@@ -163,7 +194,7 @@ bool init()
     glBindVertexArray(NULL);
 
     // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void render()
@@ -186,11 +217,17 @@ void render()
         
 
         // draw our first triangle
+        
+        
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
+        
+        
+        glEnable(GL_PROGRAM_POINT_SIZE);        
+        glPointSize(4.0f);
+        glDrawArrays(GL_POINTS, 0, SCR_WIDTH);
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0); // no need to unbind it every time
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
