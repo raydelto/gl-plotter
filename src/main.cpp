@@ -12,6 +12,7 @@
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void showFPS(GLFWwindow* window);
+GLuint posOffsetIndex;
 const char* APP_TITLE = "Plotting y=sin(x)";
 GLFWwindow *window;
 std::vector<float> vertices;
@@ -25,11 +26,12 @@ int shaderProgram, fragmentShader;
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
                                  "layout (location = 1) in vec3 aColor;\n"
+                                 "uniform float posOffset;\n"
                                  "out vec3 vertexColor;\n"
                                  "void main()\n"
                                  "{\n"
                                  "   gl_PointSize = 2.0f;\n"
-                                 "   gl_Position = vec4(aPos, 1.0);\n"
+                                 "   gl_Position = vec4(aPos.x+posOffset, aPos.y, aPos.z , 1.0);\n"
                                  "   vertexColor = aColor;\n"
                                  "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
@@ -82,7 +84,7 @@ bool init()
     // glfw window creation
     // --------------------
     #ifdef __APPLE__
-    //Little hack to avoid black screen on Mac OS (Mojave) (Part 1/2)
+    //Little hack to avoid black screen on Mac OS (Mojave) (Part 1/2) [Not needed with latest Mojave Version]
     window = glfwCreateWindow(SCR_WIDTH-1, SCR_HEIGHT, APP_TITLE, NULL, NULL);
     #else
     window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, APP_TITLE, NULL, NULL);
@@ -95,9 +97,9 @@ bool init()
         return -1;
     }
     #ifdef __APPLE__
-    //Little hack to avoid black screen on Mac OS (Mojave) (Part 2/2)
-    glfwPollEvents();
-    glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
+    //Little hack to avoid black screen on Mac OS (Mojave) (Part 2/2) [Not needed with latest Mojave Version]
+    // glfwPollEvents();
+    // glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
     #endif
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -186,15 +188,33 @@ bool init()
 
 void render()
 {
+    glUseProgram(shaderProgram);
+    float offset = 0.0f;
+    double start, end;
+    start = end = 0.0;
+    
+    posOffsetIndex = glGetUniformLocation(shaderProgram, "posOffset");
+    start = glfwGetTime();
+    double inc;
+    short dir = 1;
     while (!glfwWindowShouldClose(window))
     {       
         showFPS(window);
         processInput(window);
 
+        inc = (glfwGetTime() - start) / 10;
+        start = glfwGetTime();
+        offset += (inc * dir);
+        
+        if(offset >1.0 || offset <-1.0)
+        {
+            dir *= -1;
+        }
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);       
         glClear(GL_COLOR_BUFFER_BIT);
         
         glUseProgram(shaderProgram);
+        glUniform1f(posOffsetIndex, offset);
         glBindVertexArray(VAO);
         
         glEnable(GL_PROGRAM_POINT_SIZE);        
