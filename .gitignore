@@ -1,3 +1,5 @@
 bin
-.vscode
+.vscode/ipch
+
 .DS_Store
+
